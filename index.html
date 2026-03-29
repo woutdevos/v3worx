@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V3-Worx | Planning</title>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Alumni+Sans:wght@300;400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --dark:#022023;--teal:#037788;--teal2:#025f6d;--teal3:#e6f4f6;
+  --olive:#BEBF07;--olive2:#9c9d06;--olive3:#f5f5d0;
+  --taupe:#9B8786;--taupe3:#f2eeee;
+  --bg:#f2f4f2;--card:#fff;--border:#dde0dd;
+  --text:#022023;--text2:#3a5254;--text3:#7a9496;
+  --green:#1d9e6a;--red:#c0392b;--amber:#d97706;
+  --sh:0 1px 3px rgba(2,32,35,.07),0 4px 16px rgba(2,32,35,.06);
+  --sh2:0 4px 24px rgba(2,32,35,.13);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* ── SETUP SCREEN ── */
+#setupScreen{
+  position:fixed;inset:0;background:var(--dark);
+  display:flex;align-items:center;justify-content:center;
+  z-index:9000;
+}
+.ss-wrap{max-width:520px;width:93%;text-align:center;}
+.ss-logo{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:32px;}
+.ss-lm{width:52px;height:52px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Alumni Sans',sans-serif;font-weight:800;font-size:20px;color:var(--dark);}
+.ss-ln{font-family:'Alumni Sans',sans-serif;font-size:34px;font-weight:800;letter-spacing:2px;color:var(--olive);}
+.ss-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:32px 36px;text-align:left;}
+.ss-title{font-family:'Alumni Sans',sans-serif;font-size:22px;font-weight:700;color:white;margin-bottom:6px;}
+.ss-sub{font-size:13px;color:rgba(255,255,255,.45);margin-bottom:24px;line-height:1.6;}
+.ss-step{display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;}
+.ss-num{width:26px;height:26px;background:var(--teal);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;flex-shrink:0;margin-top:1px;}
+.ss-step-txt{font-size:13px;color:rgba(255,255,255,.7);line-height:1.7;}
+.ss-step-txt a{color:var(--olive);text-decoration:none;}
+.ss-step-txt code{background:rgba(255,255,255,.1);padding:1px 6px;border-radius:4px;font-size:12px;color:var(--olive);font-family:monospace;}
+.ss-divider{height:1px;background:rgba(255,255,255,.08);margin:20px 0;}
+.ss-fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.ss-fg label{font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1.3px;}
+.ss-fg input{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:10px 13px;font-size:13px;color:white;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .13s;}
+.ss-fg input:focus{border-color:var(--teal);background:rgba(255,255,255,.1);}
+.ss-fg input::placeholder{color:rgba(255,255,255,.25);}
+.ss-btns{display:flex;gap:10px;margin-top:20px;}
+.ss-btn-main{flex:1;padding:12px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .14s;}
+.ss-btn-main:hover{background:var(--teal2);}
+.ss-btn-demo{padding:12px 20px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.12);border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .14s;}
+.ss-btn-demo:hover{background:rgba(255,255,255,.12);color:rgba(255,255,255,.85);}
+.ss-err{background:rgba(192,57,43,.15);border:1px solid rgba(192,57,43,.3);border-radius:7px;padding:10px 13px;font-size:12px;color:#ff8a8a;margin-top:10px;display:none;}
+
+/* ── SYNC STATUS BAR ── */
+#syncBar{
+  background:var(--dark);
+  padding:6px 20px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:12px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.s-ok{background:#3dd68c;}.s-err{background:var(--red);}.s-load{background:var(--amber);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+.sbar-txt{color:rgba(255,255,255,.5);}
+.sbar-txt strong{color:rgba(255,255,255,.85);}
+.sbar-right{margin-left:auto;display:flex;gap:8px;align-items:center;}
+.sbar-link{font-size:11px;color:rgba(255,255,255,.3);cursor:pointer;text-decoration:underline;}
+.sbar-link:hover{color:rgba(255,255,255,.6);}
+
+/* ── LOADING ── */
+#loadingOverlay{position:fixed;inset:0;background:rgba(2,32,35,.65);z-index:8000;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;backdrop-filter:blur(4px);}
+#loadingOverlay.show{display:flex;}
+.spinner{width:38px;height:38px;border:3px solid rgba(255,255,255,.1);border-top:3px solid var(--olive);border-radius:50%;animation:spin .75s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.load-txt{color:rgba(255,255,255,.6);font-size:13px;}
+
+/* ── HEADER ── */
+header{background:var(--dark);height:62px;padding:0 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 20px rgba(2,32,35,.3);}
+.logo{display:flex;align-items:center;gap:11px;}
+.lm{width:34px;height:34px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Alumni Sans',sans-serif;font-weight:800;font-size:14px;color:var(--dark);flex-shrink:0;}
+.ln{font-family:'Alumni Sans',sans-serif;font-size:21px;font-weight:800;letter-spacing:2px;color:var(--olive);}
+.lsep{width:1px;height:20px;background:rgba(255,255,255,.15);}
+.ltag{font-size:10px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.35);}
+.hdr-r{display:flex;align-items:center;gap:9px;}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .14s;font-family:'DM Sans',sans-serif;white-space:nowrap;}
+.btn-teal{background:var(--teal);color:white;}.btn-teal:hover{background:var(--teal2);}
+.btn-olive{background:var(--olive);color:var(--dark);}.btn-olive:hover{background:var(--olive2);}
+.btn-gd{background:rgba(255,255,255,.08);color:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.12);}.btn-gd:hover{background:rgba(255,255,255,.14);color:white;}
+.btn-out{background:white;color:var(--text);border:1px solid var(--border);}.btn-out:hover{background:var(--bg);border-color:var(--teal);color:var(--teal);}
+.btn-del{background:rgba(192,57,43,.08);color:var(--red);border:1px solid rgba(192,57,43,.18);}.btn-del:hover{background:rgba(192,57,43,.15);}
+.btn-sm{padding:5px 10px;font-size:12px;}.btn-xs{padding:3px 8px;font-size:11px;}
+.btn-full{width:100%;justify-content:center;}
+
+/* ── LAYOUT ── */
+.layout{display:flex;height:calc(100vh - 62px);}
+.sidebar{width:220px;flex-shrink:0;background:var(--dark);display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.05);}
+.ng{padding:16px 12px 4px;}
+.ngl{font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.25);padding:0 8px;margin-bottom:6px;}
+.nv{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:rgba(255,255,255,.5);transition:all .14s;user-select:none;margin-bottom:1px;}
+.nv:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.8);}
+.nv.active{background:var(--teal);color:white;}
+.nv .ni{font-size:15px;width:20px;text-align:center;flex-shrink:0;}
+.nbadge{margin-left:auto;background:var(--olive);color:var(--dark);font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;}
+.sf{margin-top:auto;padding:13px;border-top:1px solid rgba(255,255,255,.06);}
+
+/* ── MAIN ── */
+.main{flex:1;overflow-y:auto;padding:22px 26px;}
+.page{display:none;}.page.active{display:block;}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:16px;}
+.ph-t{font-family:'Alumni Sans',sans-serif;font-size:29px;font-weight:800;letter-spacing:.8px;color:var(--dark);line-height:1;}
+.ph-t em{color:var(--teal);font-style:normal;}
+.ph-s{font-size:12px;color:var(--text3);margin-top:4px;}
+
+/* ── STAT ROW ── */
+.srow{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:20px;}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:17px 19px;position:relative;overflow:hidden;box-shadow:var(--sh);}
+.sc::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 11px 11px;}
+.sc-teal::before{background:var(--teal);}.sc-olive::before{background:var(--olive);}
+.sc-red::before{background:var(--red);}.sc-green::before{background:var(--green);}
+.sc-taupe::before{background:var(--taupe);}
+.slbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.3px;color:var(--text3);}
+.sval{font-family:'Alumni Sans',sans-serif;font-size:40px;font-weight:800;color:var(--dark);line-height:1;margin:4px 0 2px;}
+.ssub{font-size:12px;color:var(--text3);}
+
+/* ── CARD ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden;box-shadow:var(--sh);margin-bottom:17px;}
+.ch{padding:12px 17px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:#fafbfa;}
+.ct{font-family:'Alumni Sans',sans-serif;font-size:15px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--dark);}
+
+/* ── OUTLOOK BANNER ── */
+.ob{background:var(--dark);border:1px solid rgba(3,119,136,.25);border-radius:10px;padding:12px 17px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:17px;box-shadow:var(--sh);}
+.ob-t{font-size:13px;color:rgba(255,255,255,.75);line-height:1.5;}
+.ob-t strong{color:white;}
+.ob-t small{display:block;font-size:11px;color:rgba(255,255,255,.4);margin-top:1px;}
+
+/* ── TABLE ── */
+table{width:100%;border-collapse:collapse;}
+th{padding:9px 13px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--text3);background:#f6f8f6;border-bottom:1px solid var(--border);}
+td{padding:10px 13px;font-size:13px;border-bottom:1px solid rgba(2,32,35,.04);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(3,119,136,.025);}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;}
+.b-gepland{background:var(--teal3);color:var(--teal2);}
+.b-bezig{background:var(--olive3);color:var(--olive2);border:1px solid rgba(190,191,7,.25);}
+.b-klaar{background:rgba(29,158,106,.1);color:var(--green);}
+.b-vertraagd{background:rgba(192,57,43,.1);color:var(--red);}
+.b-wacht{background:var(--taupe3);color:var(--taupe);}
+.tb{display:inline-flex;align-items:center;padding:3px 9px;border-radius:5px;font-size:11px;font-weight:600;}
+.tb-s{background:var(--olive3);color:#7a7c00;}
+.tb-g{background:var(--teal3);color:var(--teal2);}
+.tb-b{background:rgba(2,32,35,.06);color:var(--dark);}
+
+/* ── PROGRESS ── */
+.pw{background:var(--bg);border-radius:4px;height:5px;overflow:hidden;}
+.pb{height:5px;border-radius:4px;transition:width .3s;}
+.pl{font-size:11px;color:var(--text3);margin-top:2px;}
+
+/* ── DEADLINE DOT ── */
+.dd{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;}
+.d-ok{background:var(--green);}.d-soon{background:var(--amber);}.d-late{background:var(--red);}
+
+/* ── GANTT ── */
+.gscroll{overflow-x:auto;}.ginner{min-width:820px;}
+.grow{display:grid;align-items:center;border-bottom:1px solid rgba(2,32,35,.04);}
+.grow:last-child{border-bottom:none;}
+.grow:hover{background:rgba(3,119,136,.025);}
+.glbl{padding:9px 13px;font-size:12px;font-weight:600;color:var(--text);border-right:1px solid var(--border);}
+.glbl small{display:block;color:var(--text3);font-size:10px;font-weight:400;margin-top:1px;}
+.gtl{position:relative;height:42px;}
+.gbar{position:absolute;height:24px;top:50%;transform:translateY(-50%);border-radius:5px;display:flex;align-items:center;padding:0 8px;font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;transition:filter .14s;color:white;}
+.gbar:hover{filter:brightness(1.1);}
+.gtoday{position:absolute;top:0;bottom:0;width:2px;background:var(--red);opacity:.7;z-index:5;}
+.gtick{position:absolute;top:0;width:1px;height:100%;background:var(--border);opacity:.6;}
+.gmlbl{font-size:9px;color:var(--text3);padding:4px 7px;text-transform:uppercase;letter-spacing:1.2px;font-weight:700;}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(2,32,35,.5);z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.overlay.open{display:flex;}
+.modal{background:white;border-radius:14px;width:600px;max-width:96vw;max-height:92vh;overflow-y:auto;animation:mUp .2s ease;box-shadow:var(--sh2);}
+@keyframes mUp{from{transform:translateY(14px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.mhd{padding:17px 22px;background:var(--dark);border-radius:14px 14px 0 0;display:flex;align-items:center;justify-content:space-between;}
+.mhd-t{font-family:'Alumni Sans',sans-serif;font-size:20px;font-weight:700;color:white;}
+.mx{width:28px;height:28px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:rgba(255,255,255,.6);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .13s;}
+.mx:hover{background:rgba(255,255,255,.15);color:white;}
+.mbd{padding:22px;}
+.mft{padding:13px 22px;border-top:1px solid var(--border);display:flex;gap:9px;justify-content:flex-end;background:#fafbfa;border-radius:0 0 14px 14px;}
+
+/* ── FORM ── */
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg.w2{grid-column:1/-1;}
+.fg label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.3px;}
+input,select,textarea{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:13px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;transition:border-color .13s;}
+input:focus,select:focus,textarea:focus{border-color:var(--teal);background:white;}
+textarea{resize:vertical;min-height:70px;}
+
+/* ── CONTRACTOR CARDS ── */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(275px,1fr));gap:13px;}
+.ccard{background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden;cursor:pointer;transition:all .18s;box-shadow:var(--sh);}
+.ccard:hover{border-color:var(--teal);transform:translateY(-2px);box-shadow:0 8px 24px rgba(3,119,136,.14);}
+.cchd{padding:13px 15px;display:flex;align-items:center;gap:12px;background:var(--dark);}
+.cav{width:40px;height:40px;border-radius:9px;background:var(--teal);display:flex;align-items:center;justify-content:center;font-family:'Alumni Sans',sans-serif;font-size:17px;font-weight:800;color:white;flex-shrink:0;}
+.cnm{font-weight:600;font-size:14px;color:white;}
+.csp{font-size:11px;color:rgba(255,255,255,.45);margin-top:1px;}
+.ccbd{padding:12px 15px;}
+.csts{display:flex;gap:18px;margin-bottom:11px;}
+.cst{text-align:center;}
+.cstv{font-family:'Alumni Sans',sans-serif;font-size:24px;font-weight:800;color:var(--teal);line-height:1;}
+.cstl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;}
+
+/* ── BACK ── */
+.back-btn{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);background:white;border:1px solid var(--border);margin-bottom:17px;transition:all .13s;box-shadow:var(--sh);}
+.back-btn:hover{color:var(--teal);border-color:var(--teal);}
+
+/* ── FILTER ── */
+.frow{display:flex;gap:9px;margin-bottom:13px;flex-wrap:wrap;align-items:center;}
+.frow input{flex:1;min-width:180px;background:white;}
+.frow select{background:white;padding:9px 12px;}
+
+/* ── CHIP ── */
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;background:var(--bg);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:12px;font-weight:500;transition:all .12s;user-select:none;}
+.chip input{width:auto;padding:0;border:none;background:none;accent-color:var(--teal);}
+.chip:has(input:checked){background:var(--teal3);border-color:var(--teal);color:var(--teal2);}
+
+/* ── EMPTY ── */
+.empty{padding:42px 20px;text-align:center;color:var(--text3);}
+.empty-ic{font-size:32px;margin-bottom:8px;}.empty-tx{font-size:13px;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--dark);border:1px solid rgba(255,255,255,.1);border-left:3px solid var(--teal);border-radius:9px;padding:11px 16px;font-size:13px;font-weight:500;color:white;z-index:9999;transform:translateX(130%);transition:transform .28s cubic-bezier(.34,1.56,.64,1);box-shadow:var(--sh2);max-width:300px;}
+.toast.show{transform:translateX(0);}
+.toast.ok{border-left-color:var(--olive);}.toast.err{border-left-color:var(--red);}.toast.cal{border-left-color:var(--teal);}
+
+::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+@media(max-width:900px){.srow{grid-template-columns:1fr 1fr;}.sidebar{width:54px;}.nv span:not(.ni),.ngl,.sf{display:none;}.nv{justify-content:center;}.nbadge{display:none;}}
+</style>
+</head>
+<body>
+
+<!-- ══ WACHTWOORD SCHERM ══ -->
+<div id="pwScreen" style="position:fixed;inset:0;background:var(--dark);display:flex;align-items:center;justify-content:center;z-index:9500;">
+  <div style="max-width:380px;width:92%;text-align:center;">
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:32px;">
+      <div style="width:52px;height:52px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Alumni Sans',sans-serif;font-weight:800;font-size:20px;color:var(--dark);">V3</div>
+      <div style="font-family:'Alumni Sans',sans-serif;font-size:34px;font-weight:800;letter-spacing:2px;color:var(--olive);">WORX</div>
+    </div>
+    <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:32px 36px;">
+      <div style="font-family:'Alumni Sans',sans-serif;font-size:22px;font-weight:700;color:white;margin-bottom:6px;">&#128274; Toegangscode</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:24px;">Voer de V3-Worx toegangscode in om de planning te openen</div>
+      <input id="pwInput" type="password" placeholder="Toegangscode..." onkeydown="if(event.key==='Enter')checkPw()"
+        style="width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:13px 14px;font-size:18px;color:white;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:10px;text-align:center;letter-spacing:4px;">
+      <div id="pwErr" style="font-size:12px;color:#ff8a8a;margin-bottom:12px;min-height:18px;"></div>
+      <button onclick="checkPw()" style="width:100%;padding:13px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">
+        Inloggen &#8594;
+      </button>
+      <div style="margin-top:20px;font-size:11px;color:rgba(255,255,255,.2);">Neem contact op met de beheerder als je de code niet hebt</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SETUP SCREEN ══ -->
+<div id="setupScreen">
+  <div class="ss-wrap">
+    <div class="ss-logo">
+      <div class="ss-lm">V3</div>
+      <div class="ss-ln">WORX</div>
+    </div>
+    <div class="ss-card">
+      <div class="ss-title">&#128293; Firebase instellen</div>
+      <div class="ss-sub">Eenmalige setup van 10 minuten — daarna werkt alles automatisch voor iedereen.</div>
+
+      <div class="ss-step">
+        <div class="ss-num">1</div>
+        <div class="ss-step-txt">Ga naar <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> en log in met een Google account.</div>
+      </div>
+      <div class="ss-step">
+        <div class="ss-num">2</div>
+        <div class="ss-step-txt">Klik op <strong style="color:white">"Project toevoegen"</strong> → naam: <code>v3worx</code> → Google Analytics: uitschakelen → <strong style="color:white">"Project maken"</strong>.</div>
+      </div>
+      <div class="ss-step">
+        <div class="ss-num">3</div>
+        <div class="ss-step-txt">Klik op het <strong style="color:white">web-icoon (&lt;/&gt;)</strong> → app naam: <code>v3worx</code> → registreer. Kopieer daarna de <strong style="color:white">firebaseConfig</strong> gegevens.</div>
+      </div>
+      <div class="ss-step">
+        <div class="ss-num">4</div>
+        <div class="ss-step-txt">Ga naar <strong style="color:white">Firestore Database</strong> (linkermenu) → <strong style="color:white">"Database maken"</strong> → kies <strong style="color:white">"Testmodus"</strong> → regio: <code>europe-west1</code>.</div>
+      </div>
+
+      <div class="ss-divider"></div>
+
+      <div class="ss-fg">
+        <label>API Key</label>
+        <input id="cfg-apiKey" type="text" placeholder="AIzaSy...">
+      </div>
+      <div class="ss-fg">
+        <label>Auth Domain</label>
+        <input id="cfg-authDomain" type="text" placeholder="v3worx.firebaseapp.com">
+      </div>
+      <div class="ss-fg">
+        <label>Project ID</label>
+        <input id="cfg-projectId" type="text" placeholder="v3worx">
+      </div>
+
+      <div id="setupErr" class="ss-err"></div>
+
+      <div class="ss-btns">
+        <button class="ss-btn-main" onclick="connectFirebase()">&#128293; Verbinden met Firebase</button>
+        <button class="ss-btn-demo" onclick="startDemo()">Demo zonder Firebase</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LOADING ══ -->
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="load-txt" id="loadTxt">Laden...</div>
+</div>
+
+<!-- ══ SYNC STATUS BAR ══ -->
+<div id="syncBar">
+  <div class="sdot" id="sDot"></div>
+  <div class="sbar-txt" id="sTxt"></div>
+  <div class="sbar-right">
+    <span class="sbar-link" onclick="showSetup()">&#9881; Firebase wijzigen</span>
+    <span class="sbar-link" onclick="exportBackup()">&#128229; Back-up</span>
+  </div>
+</div>
+
+<!-- ══ HEADER ══ -->
+<header>
+  <div class="logo">
+    <div class="lm">V3</div>
+    <div class="ln">WORX</div>
+    <div class="lsep"></div>
+    <div class="ltag">Planning</div>
+  </div>
+  <div class="hdr-r">
+    <button class="btn btn-gd btn-sm" onclick="openOutlookModal('all')">&#128197; Outlook</button>
+    <button class="btn btn-olive btn-sm" onclick="openModal('pModal')">+ Project</button>
+  </div>
+</header>
+
+<div class="layout">
+<nav class="sidebar">
+  <div class="ng">
+    <div class="ngl">Menu</div>
+    <div class="nv active" onclick="go('dash',this)"><span class="ni">&#128202;</span><span>Dashboard</span></div>
+    <div class="nv" onclick="go('projects',this)"><span class="ni">&#127959;</span><span>Projecten</span><span class="nbadge" id="nb-p">0</span></div>
+    <div class="nv" onclick="go('gantt',this)"><span class="ni">&#128197;</span><span>Algemene Planning</span></div>
+    <div class="nv" onclick="go('cons',this)"><span class="ni">&#128119;</span><span>Onderaannemers</span><span class="nbadge" id="nb-c">0</span></div>
+  </div>
+  <div class="sf">
+    <button class="btn btn-gd btn-full btn-sm" onclick="openModal('cModal')">+ Aannemer</button>
+  </div>
+</nav>
+
+<main class="main">
+
+<!-- DASHBOARD -->
+<div id="pg-dash" class="page active">
+  <div class="ph">
+    <div><div class="ph-t">Dashboard <em>Overzicht</em></div><div class="ph-s" id="dashSub">Alle projecten en planning in één oogopslag</div></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-out btn-sm" onclick="openOutlookModal('all')">&#128197; Outlook Sync</button>
+      <button class="btn btn-teal btn-sm" onclick="openModal('pModal')">+ Nieuw Project</button>
+    </div>
+  </div>
+  <div class="srow" id="statsRow"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:17px;">
+    <div class="card"><div class="ch"><div class="ct">&#9889; Actieve Projecten</div></div><div id="dash-active"></div></div>
+    <div class="card"><div class="ch"><div class="ct">&#9203; Deadlines Binnenkort</div></div><div id="dash-dead"></div></div>
+  </div>
+  <div class="card" style="margin-top:17px;"><div class="ch"><div class="ct">&#128119; Werkdruk Onderaannemers</div></div><div id="dash-load" style="padding:13px 17px;"></div></div>
+</div>
+
+<!-- PROJECTEN -->
+<div id="pg-projects" class="page">
+  <div class="ph">
+    <div><div class="ph-t">Projecten <em>Beheer</em></div><div class="ph-s">Overzicht van alle projecten</div></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-out btn-sm" onclick="openOutlookModal('all')">&#128197; Outlook</button>
+      <button class="btn btn-teal btn-sm" onclick="openModal('pModal')">+ Nieuw Project</button>
+    </div>
+  </div>
+  <div class="frow">
+    <input type="text" id="srch" placeholder="Zoek project of klant..." oninput="renderProjects()">
+    <select id="fSt" onchange="renderProjects()"><option value="">Alle statussen</option><option value="gepland">Gepland</option><option value="bezig">Bezig</option><option value="klaar">Klaar</option><option value="vertraagd">Vertraagd</option><option value="wacht">Wacht</option></select>
+    <select id="fTy" onchange="renderProjects()"><option value="">Alle types</option><option value="schilder">Schilderwerk</option><option value="gordijnen">Gordijnen</option><option value="beide">Beide</option></select>
+  </div>
+  <div class="card">
+    <table><thead><tr><th>Project</th><th>Type</th><th>Start</th><th>Deadline</th><th>Aannemers</th><th>Status</th><th>Voortgang</th><th></th></tr></thead>
+    <tbody id="pTbody"></tbody></table>
+    <div id="pEmpty" class="empty" style="display:none;"><div class="empty-ic">&#127959;</div><div class="empty-tx">Geen projecten gevonden</div></div>
+  </div>
+</div>
+
+<!-- ALGEMENE PLANNING -->
+<div id="pg-gantt" class="page">
+  <div class="ph">
+    <div><div class="ph-t">Algemene <em>Planning</em></div><div class="ph-s">Visuele tijdlijn — elk blok = volledige looptijd project</div></div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-out btn-sm" onclick="ganttShift(-1)">&#9664;</button>
+      <span id="ganttLbl" style="font-size:13px;font-weight:600;color:var(--text2);min-width:155px;text-align:center;"></span>
+      <button class="btn btn-out btn-sm" onclick="ganttShift(1)">&#9654;</button>
+      <button class="btn btn-out btn-sm" onclick="ganttOff=0;renderG()">Nu</button>
+    </div>
+  </div>
+  <div class="ob">
+    <div class="ob-t"><strong>&#128197; Outlook Synchronisatie — Projecten als agenda-blokken</strong><small>Elk project = blok van startdatum t/m deadline · Herinnering 3 dagen voor deadline</small></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-olive btn-sm" onclick="openOutlookModal('all')">&#11015;&#65039; Alle projecten</button>
+      <button class="btn btn-gd btn-sm" onclick="openOutlookModal('con')">&#128119; Per aannemer</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch">
+      <div class="ct">&#128197; Projecten Timeline</div>
+      <div style="display:flex;gap:11px;font-size:10px;color:var(--text3);align-items:center;">
+        <span><span style="width:9px;height:9px;background:var(--teal);border-radius:2px;display:inline-block;margin-right:3px;"></span>Gepland</span>
+        <span><span style="width:9px;height:9px;background:var(--olive);border-radius:2px;display:inline-block;margin-right:3px;"></span>Bezig</span>
+        <span><span style="width:9px;height:9px;background:var(--red);border-radius:2px;display:inline-block;margin-right:3px;"></span>Vertraagd</span>
+        <span><span style="width:9px;height:9px;background:var(--taupe);border-radius:2px;display:inline-block;margin-right:3px;"></span>Wacht</span>
+      </div>
+    </div>
+    <div class="gscroll"><div class="ginner" id="ganttBox"></div></div>
+  </div>
+</div>
+
+<!-- ONDERAANNEMERS -->
+<div id="pg-cons" class="page">
+  <div class="ph">
+    <div><div class="ph-t">Onderaannemers <em>Planning</em></div><div class="ph-s">Beheer en eigen planningsoverzicht per aannemer</div></div>
+    <button class="btn btn-teal btn-sm" onclick="openModal('cModal')">+ Nieuwe Aannemer</button>
+  </div>
+  <div id="con-list">
+    <div class="cgrid" id="conGrid"></div>
+    <div id="conEmpty" class="empty" style="display:none;"><div class="empty-ic">&#128119;</div><div class="empty-tx">Nog geen aannemers toegevoegd</div></div>
+  </div>
+  <div id="con-detail" style="display:none;">
+    <div class="back-btn" onclick="backToCons()">&#8592; Terug naar overzicht</div>
+    <div id="conDetailBody"></div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- MODAL PROJECT -->
+<div class="overlay" id="pModal">
+<div class="modal">
+  <div class="mhd"><div class="mhd-t" id="pModalTitle">Nieuw Project</div><button class="mx" onclick="closeModal('pModal')">&#10005;</button></div>
+  <div class="mbd">
+    <div class="fg2">
+      <div class="fg w2"><label>Projectnaam *</label><input id="pName" type="text" placeholder="Bijv. Villa De Smet - Schilderwerk gevels"></div>
+      <div class="fg"><label>Type werk</label><select id="pType"><option value="schilder">Schilderwerk (V3-Paints)</option><option value="gordijnen">Gordijnen wassen (V3-Cleans)</option><option value="beide">Beide</option></select></div>
+      <div class="fg"><label>Status</label><select id="pStat"><option value="gepland">Gepland</option><option value="wacht">Wacht op start</option><option value="bezig">Bezig</option><option value="vertraagd">Vertraagd</option><option value="klaar">Klaar</option></select></div>
+      <div class="fg"><label>Startdatum *</label><input id="pStart" type="date"></div>
+      <div class="fg"><label>Deadline *</label><input id="pEnd" type="date"></div>
+      <div class="fg"><label>Klant</label><input id="pClient" type="text" placeholder="Naam klant / opdrachtgever"></div>
+      <div class="fg"><label>Locatie</label><input id="pLoc" type="text" placeholder="Adres of stad"></div>
+      <div class="fg w2"><label>Onderaannemers toewijzen</label><div id="pConCbs" style="display:flex;flex-wrap:wrap;gap:7px;margin-top:5px;"></div></div>
+      <div class="fg"><label>Voortgang (%)</label><input id="pProg" type="number" min="0" max="100" value="0"></div>
+      <div class="fg w2"><label>Notities</label><textarea id="pNote" placeholder="Extra informatie..."></textarea></div>
+    </div>
+  </div>
+  <div class="mft"><input type="hidden" id="pEditId"><button class="btn btn-out" onclick="closeModal('pModal')">Annuleren</button><button class="btn btn-teal" onclick="saveProject()">&#128190; Opslaan</button></div>
+</div>
+</div>
+
+<!-- MODAL AANNEMER -->
+<div class="overlay" id="cModal">
+<div class="modal">
+  <div class="mhd"><div class="mhd-t" id="cModalTitle">Nieuwe Onderaannemer</div><button class="mx" onclick="closeModal('cModal')">&#10005;</button></div>
+  <div class="mbd">
+    <div class="fg2">
+      <div class="fg w2"><label>Naam *</label><input id="cName" type="text" placeholder="Voornaam Achternaam of Bedrijfsnaam"></div>
+      <div class="fg"><label>Specialisatie</label><select id="cSpec"><option value="schilder">Schilder (V3-Paints)</option><option value="gordijnen">Gordijnen (V3-Cleans)</option><option value="beide">Beide</option></select></div>
+      <div class="fg"><label>Telefoon</label><input id="cPhone" type="text" placeholder="+32 ..."></div>
+      <div class="fg"><label>E-mail</label><input id="cEmail" type="email" placeholder="naam@email.com"></div>
+      <div class="fg w2"><label>Notities</label><textarea id="cNote" placeholder="Extra info..."></textarea></div>
+    </div>
+  </div>
+  <div class="mft"><input type="hidden" id="cEditId"><button class="btn btn-out" onclick="closeModal('cModal')">Annuleren</button><button class="btn btn-teal" onclick="saveContractor()">&#128190; Opslaan</button></div>
+</div>
+</div>
+
+<!-- MODAL OUTLOOK -->
+<div class="overlay" id="outlookModal">
+<div class="modal" style="width:500px;">
+  <div class="mhd"><div class="mhd-t">&#128197; Sync naar Outlook</div><button class="mx" onclick="closeModal('outlookModal')">&#10005;</button></div>
+  <div class="mbd" id="outBody"></div>
+  <div class="mft" id="outFoot"></div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════
+   STAAT
+══════════════════════════════════════════════ */
+var S = { projects: [], contractors: [] };
+var db = null;
+var useFirebase = false;
+var listeners = [];
+
+/* ══════════════════════════════════════════════
+   FIREBASE SETUP
+══════════════════════════════════════════════ */
+function connectFirebase() {
+  var apiKey     = document.getElementById('cfg-apiKey').value.trim();
+  var authDomain = document.getElementById('cfg-authDomain').value.trim();
+  var projectId  = document.getElementById('cfg-projectId').value.trim();
+  var err        = document.getElementById('setupErr');
+  err.style.display = 'none';
+
+  if (!apiKey || !authDomain || !projectId) {
+    err.textContent = 'Vul alle drie de velden in.';
+    err.style.display = 'block';
+    return;
+  }
+
+  try {
+    // Sla op in localStorage zodat de volgende keer auto-connect
+    localStorage.setItem('fb_apiKey',     apiKey);
+    localStorage.setItem('fb_authDomain', authDomain);
+    localStorage.setItem('fb_projectId',  projectId);
+
+    initFirebase(apiKey, authDomain, projectId);
+  } catch(e) {
+    err.textContent = 'Fout: ' + e.message;
+    err.style.display = 'block';
+  }
+}
+
+function initFirebase(apiKey, authDomain, projectId) {
+  try {
+    if (!firebase.apps.length) {
+      firebase.initializeApp({ apiKey: apiKey, authDomain: authDomain, projectId: projectId });
+    }
+    db = firebase.firestore();
+    // Test de verbinding
+    showLoading('Verbinding testen...');
+    db.collection('projects').limit(1).get().then(function() {
+      hideLoading();
+      useFirebase = true;
+      document.getElementById('setupScreen').style.display = 'none';
+      setSyncStatus('ok', '<strong>Firebase verbonden</strong> — iedereen ziet dezelfde planning live');
+      startRealtimeListeners();
+    }).catch(function(e) {
+      hideLoading();
+      var err = document.getElementById('setupErr');
+      err.textContent = 'Verbinding mislukt: ' + e.message + '. Controleer je Project ID en of Firestore is ingeschakeld.';
+      err.style.display = 'block';
+    });
+  } catch(e) {
+    hideLoading();
+    var err = document.getElementById('setupErr');
+    err.textContent = 'Fout bij initialiseren: ' + e.message;
+    err.style.display = 'block';
+  }
+}
+
+function startRealtimeListeners() {
+  showLoading('Planning laden...');
+  var projLoaded = false, conLoaded = false;
+
+  // Realtime listener projecten — update automatisch als iemand iets wijzigt
+  var l1 = db.collection('projects').onSnapshot(function(snap) {
+    S.projects = [];
+    snap.forEach(function(doc) {
+      var d = doc.data(); d.id = doc.id; S.projects.push(d);
+    });
+    S.projects.sort(function(a,b){ return new Date(a.end) - new Date(b.end); });
+    projLoaded = true;
+    if (projLoaded && conLoaded) { hideLoading(); renderAll(); toast('Planning geladen', 'ok'); }
+    else renderAll();
+  }, function(e) {
+    hideLoading();
+    setSyncStatus('err', 'Verbindingsfout — controleer Firebase');
+    toast('Firebase fout: ' + e.message, 'err');
+  });
+
+  // Realtime listener aannemers
+  var l2 = db.collection('contractors').onSnapshot(function(snap) {
+    S.contractors = [];
+    snap.forEach(function(doc) {
+      var d = doc.data(); d.id = doc.id; S.contractors.push(d);
+    });
+    conLoaded = true;
+    if (projLoaded && conLoaded) { hideLoading(); renderAll(); }
+    else renderAll();
+  }, function(e) {
+    setSyncStatus('err', 'Verbindingsfout');
+  });
+
+  listeners.push(l1, l2);
+}
+
+function startDemo() {
+  useFirebase = false;
+  document.getElementById('setupScreen').style.display = 'none';
+  setSyncStatus('err', '<strong>Demo modus</strong> — data wordt enkel lokaal opgeslagen op dit apparaat');
+  load(); seedDemo(); renderAll();
+}
+
+function showSetup() {
+  // Vul bestaande config in
+  document.getElementById('cfg-apiKey').value     = localStorage.getItem('fb_apiKey')     || '';
+  document.getElementById('cfg-authDomain').value = localStorage.getItem('fb_authDomain') || '';
+  document.getElementById('cfg-projectId').value  = localStorage.getItem('fb_projectId')  || '';
+  document.getElementById('setupScreen').style.display = 'flex';
+}
+
+function autoConnect() {
+  var apiKey     = localStorage.getItem('fb_apiKey');
+  var authDomain = localStorage.getItem('fb_authDomain');
+  var projectId  = localStorage.getItem('fb_projectId');
+  if (apiKey && authDomain && projectId) {
+    document.getElementById('cfg-apiKey').value     = apiKey;
+    document.getElementById('cfg-authDomain').value = authDomain;
+    document.getElementById('cfg-projectId').value  = projectId;
+    document.getElementById('setupScreen').style.display = 'none';
+    showLoading('Automatisch verbinden met Firebase...');
+    setTimeout(function() { initFirebase(apiKey, authDomain, projectId); }, 300);
+  }
+}
+
+/* ══════════════════════════════════════════════
+   SYNC STATUS
+══════════════════════════════════════════════ */
+function setSyncStatus(type, html) {
+  document.getElementById('sDot').className = 'sdot s-' + type;
+  document.getElementById('sTxt').innerHTML = html;
+  var sub = document.getElementById('dashSub');
+  if (sub) sub.textContent = type === 'ok'
+    ? 'Live gedeelde data — wijzigingen zijn meteen zichtbaar voor iedereen'
+    : 'Lokale demo modus — alleen zichtbaar op dit apparaat';
+}
+
+/* ══════════════════════════════════════════════
+   LOADING
+══════════════════════════════════════════════ */
+function showLoading(t) { document.getElementById('loadingOverlay').classList.add('show'); document.getElementById('loadTxt').textContent = t||'Laden...'; }
+function hideLoading()  { document.getElementById('loadingOverlay').classList.remove('show'); }
+
+/* ══════════════════════════════════════════════
+   LOCAL STORAGE (demo fallback)
+══════════════════════════════════════════════ */
+function save() { if (!useFirebase) { try { localStorage.setItem('v3worx4', JSON.stringify(S)); } catch(e){} } }
+function load() { try { var d=localStorage.getItem('v3worx4'); if(d) S=JSON.parse(d); } catch(e){} if(!S.projects) S.projects=[]; if(!S.contractors) S.contractors=[]; }
+function seedDemo() {
+  if (S.contractors.length) return;
+  S.contractors=[{id:'c1',name:'Jan Pieters',spec:'schilder',phone:'+32 476 12 34 56',email:'jan@v3worx.be',note:''},{id:'c2',name:'Marc Verbeke',spec:'gordijnen',phone:'+32 477 98 76 54',email:'marc@v3worx.be',note:''},{id:'c3',name:'Thomas De Smedt',spec:'beide',phone:'+32 478 55 44 33',email:'thomas@v3worx.be',note:''},{id:'c4',name:'Koen Claes',spec:'schilder',phone:'+32 479 11 22 33',email:'koen@v3worx.be',note:''}];
+  var t=new Date();function d(n){var x=new Date(t);x.setDate(x.getDate()+n);return x.toISOString().split('T')[0];}
+  S.projects=[{id:'p1',name:'Villa De Smet - Schilderwerk',type:'schilder',status:'bezig',start:d(-15),end:d(10),client:'Familie De Smet',loc:'Gent',cons:['c1','c4'],prog:60,note:''},{id:'p2',name:'Appartementen Leuven - Gordijnen',type:'gordijnen',status:'gepland',start:d(5),end:d(20),client:'Immo Leuven BV',loc:'Leuven',cons:['c2'],prog:0,note:''},{id:'p3',name:'Restaurant Brussel - Totaalrenovatie',type:'beide',status:'bezig',start:d(-8),end:d(7),client:'Brasserie Le Temps',loc:'Brussel',cons:['c1','c2','c3'],prog:45,note:''},{id:'p4',name:'Kantoorgebouw Antwerpen',type:'schilder',status:'vertraagd',start:d(-30),end:d(-3),client:'B2B Solutions NV',loc:'Antwerpen',cons:['c3','c4'],prog:70,note:''},{id:'p5',name:'Woning Brugge - Gordijnen',type:'gordijnen',status:'klaar',start:d(-20),end:d(-5),client:'Fam. Vermeersch',loc:'Brugge',cons:['c2'],prog:100,note:''},{id:'p6',name:'Hotel Gent - Volledig onderhoud',type:'beide',status:'wacht',start:d(15),end:d(45),client:'Hotel Gravensteen',loc:'Gent',cons:['c1','c2','c3','c4'],prog:0,note:''}];
+  save();
+}
+
+/* ══════════════════════════════════════════════
+   FIREBASE CRUD
+══════════════════════════════════════════════ */
+function fbSaveProject(p) {
+  if (!useFirebase) { save(); return Promise.resolve(); }
+  var data = { name:p.name, type:p.type, status:p.status, start:p.start, end:p.end, client:p.client||'', loc:p.loc||'', cons:p.cons||[], prog:p.prog||0, note:p.note||'' };
+  if (p.id && p.id.length > 5) {
+    return db.collection('projects').doc(p.id).set(data);
+  } else {
+    return db.collection('projects').add(data).then(function(r){ p.id = r.id; });
+  }
+}
+function fbDeleteProject(id) {
+  if (!useFirebase || !id) return Promise.resolve();
+  return db.collection('projects').doc(id).delete();
+}
+function fbSaveCon(c) {
+  if (!useFirebase) { save(); return Promise.resolve(); }
+  var data = { name:c.name, spec:c.spec, phone:c.phone||'', email:c.email||'', note:c.note||'' };
+  if (c.id && c.id.length > 5) {
+    return db.collection('contractors').doc(c.id).set(data);
+  } else {
+    return db.collection('contractors').add(data).then(function(r){ c.id = r.id; });
+  }
+}
+function fbDeleteCon(id) {
+  if (!useFirebase || !id) return Promise.resolve();
+  return db.collection('contractors').doc(id).delete();
+}
+
+/* ══════════════════════════════════════════════
+   HULPFUNCTIES
+══════════════════════════════════════════════ */
+function uid(){ return '_'+Math.random().toString(36).substr(2,9); }
+function fD(d){ if(!d)return'—'; return new Date(d).toLocaleDateString('nl-BE',{day:'2-digit',month:'short',year:'numeric'}); }
+function dL(d){ if(!d)return 999; return Math.ceil((new Date(d)-new Date())/864e5); }
+function ddC(e,s){ if(s==='klaar')return'd-ok'; var n=dL(e); return n<0?'d-late':n<=7?'d-soon':'d-ok'; }
+function gC(id){ for(var i=0;i<S.contractors.length;i++) if(S.contractors[i].id===id) return S.contractors[i]; return null; }
+function ini(n){ return n.split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase(); }
+function spLbl(s){ return{schilder:'Schilder',gordijnen:'Gordijnen',beide:'Beide'}[s]||s; }
+function sbadge(s){ var m={gepland:['b-gepland','Gepland'],bezig:['b-bezig','Bezig'],klaar:['b-klaar','Klaar'],vertraagd:['b-vertraagd','Vertraagd'],wacht:['b-wacht','Wacht']}; var r=m[s]||['b-gepland',s]; return'<span class="badge '+r[0]+'">'+r[1]+'</span>'; }
+function tybadge(t){ var m={schilder:['tb-s','Schilderwerk'],gordijnen:['tb-g','Gordijnen'],beide:['tb-b','Beide']}; var r=m[t]||['tb-s',t]; return'<span class="tb '+r[0]+'">'+r[1]+'</span>'; }
+function progH(v){ var p=Math.min(100,Math.max(0,v||0)); var c=p===100?'var(--green)':p>=70?'var(--teal)':p>0?'var(--olive)':'var(--border)'; return'<div class="pw"><div class="pb" style="width:'+p+'%;background:'+c+';"></div></div><div class="pl">'+p+'%</div>'; }
+function cNms(ids){ if(!ids||!ids.length)return'<span style="color:var(--text3)">—</span>'; return ids.map(function(id){ var c=gC(id); return c?'<span style="font-size:11px;background:var(--teal3);color:var(--teal2);padding:2px 7px;border-radius:4px;border:1px solid rgba(3,119,136,.18);">'+c.name.split(' ')[0]+'</span>':''; }).join(' '); }
+
+/* ══════════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════════ */
+function go(pg,el){ document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');}); document.querySelectorAll('.nv').forEach(function(b){b.classList.remove('active');}); document.getElementById('pg-'+pg).classList.add('active'); if(el)el.classList.add('active'); if(pg==='gantt')renderG(); else if(pg==='dash')renderDash(); else if(pg==='projects')renderProjects(); else if(pg==='cons')renderCons(); }
+
+/* ══════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════ */
+function toast(msg,type){ var t=document.getElementById('toast'); t.textContent=msg; t.className='toast '+(type||'ok')+' show'; setTimeout(function(){t.classList.remove('show');},3200); }
+
+/* ══════════════════════════════════════════════
+   MODALS
+══════════════════════════════════════════════ */
+function openModal(id){ document.getElementById(id).classList.add('open'); if(id==='pModal')fillCbs(); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); if(id==='pModal')clearPF(); if(id==='cModal')clearCF(); }
+document.querySelectorAll('.overlay').forEach(function(o){ o.addEventListener('click',function(e){ if(e.target===o) closeModal(o.id); }); });
+
+/* ══════════════════════════════════════════════
+   ICS / OUTLOOK
+══════════════════════════════════════════════ */
+function icsAD(ds){ return ds.replace(/-/g,''); }
+function icsEnd(ds){ var d=new Date(ds); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0].replace(/-/g,''); }
+function buildICS(pp){
+  var now=new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+  var l=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//V3-Worx//Planning//NL','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:V3-Worx Planning'];
+  pp.forEach(function(p){
+    var cn=(p.cons||[]).map(function(id){var c=gC(id);return c?c.name:'';}).filter(Boolean).join(', ');
+    var desc='Klant: '+(p.client||'—')+'\\nLocatie: '+(p.loc||'—')+'\\nAannemers: '+(cn||'—')+'\\nVoortgang: '+(p.prog||0)+'%'+(p.note?'\\nNotities: '+p.note:'');
+    l.push('BEGIN:VEVENT','UID:proj-'+p.id+'@v3worx','DTSTAMP:'+now,'DTSTART;VALUE=DATE:'+icsAD(p.start),'DTEND;VALUE=DATE:'+icsEnd(p.end),'SUMMARY:'+p.name,'DESCRIPTION:'+desc,'LOCATION:'+(p.loc||''),'CATEGORIES:V3-Worx','BEGIN:VALARM','TRIGGER:-P3D','ACTION:DISPLAY','DESCRIPTION:Deadline over 3 dagen: '+p.name,'END:VALARM','END:VEVENT');
+  });
+  l.push('END:VCALENDAR');
+  return l.join('\r\n');
+}
+function dlICS(content,fn){ var blob=new Blob([content],{type:'text/calendar;charset=utf-8'}); var url=URL.createObjectURL(blob); var a=document.createElement('a');a.href=url;a.download=fn;a.click();URL.revokeObjectURL(url); }
+function openOutlookModal(mode){
+  var body=document.getElementById('outBody'),foot=document.getElementById('outFoot');
+  if(mode==='all'){
+    var active=S.projects.filter(function(p){return p.status!=='klaar';});
+    body.innerHTML='<div style="background:var(--teal3);border:1px solid rgba(3,119,136,.2);border-radius:8px;padding:13px;margin-bottom:13px;font-size:12px;color:var(--teal2);line-height:1.8;"><strong>Projecten als blokken in Outlook:</strong><br>&#9989; '+active.length+' actieve projecten geexporteerd<br>&#9989; Blok van startdatum t/m deadline per project<br>&#9989; Herinnering 3 dagen voor elke deadline<br>&#9989; Klant, locatie en aannemers in beschrijving<br><br><strong>Importeren:</strong> Download &rarr; Dubbelklik &rarr; Outlook: "Importeren"</div><div style="font-size:11px;color:var(--text3);">Werkt ook met Teams, Google Agenda en Apple Agenda</div>';
+    foot.innerHTML='<button class="btn btn-out" onclick="closeModal(\'outlookModal\')">Sluiten</button><button class="btn btn-teal" onclick="dlICS(buildICS(S.projects.filter(function(p){return p.status!==\'klaar\';})),\'v3worx-planning.ics\');toast(\'Geexporteerd!\',\'cal\');closeModal(\'outlookModal\');">&#11015;&#65039; Download .ics</button>';
+  } else {
+    var html='<div style="font-size:13px;font-weight:600;color:var(--dark);margin-bottom:11px;">Kies een aannemer:</div><div style="display:flex;flex-direction:column;gap:8px;">';
+    S.contractors.forEach(function(c){ var pp=S.projects.filter(function(p){return(p.cons||[]).indexOf(c.id)>-1&&p.status!=='klaar';}); html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:var(--bg);border-radius:8px;border:1px solid var(--border);"><div><div style="font-weight:600;font-size:13px;">'+c.name+'</div><div style="font-size:11px;color:var(--text3);">'+spLbl(c.spec)+' &bull; '+pp.length+' project(en)</div></div><button class="btn btn-teal btn-sm" onclick="dlICS(buildICS(S.projects.filter(function(p){return(p.cons||[]).indexOf(\''+c.id+'\')>-1&&p.status!==\'klaar\';})),\'v3worx-'+c.name.replace(/\s/g,'-').toLowerCase()+'.ics\');toast(\'Geexporteerd!\',\'cal\');" '+(pp.length===0?'disabled style="opacity:.4"':'')+'>&#11015;&#65039; Export</button></div>'; });
+    html+='</div>';
+    body.innerHTML=html;
+    foot.innerHTML='<button class="btn btn-out" onclick="closeModal(\'outlookModal\')">Sluiten</button>';
+  }
+  openModal('outlookModal');
+}
+
+/* ══════════════════════════════════════════════
+   CONTRACTORS
+══════════════════════════════════════════════ */
+function fillCbs(){ var wrap=document.getElementById('pConCbs'); var eid=document.getElementById('pEditId').value; var proj=null; if(eid) for(var i=0;i<S.projects.length;i++) if(S.projects[i].id===eid){proj=S.projects[i];break;} var sel=proj?(proj.cons||[]): []; if(!S.contractors.length){wrap.innerHTML='<span style="color:var(--text3);font-size:12px;">Voeg eerst aannemers toe</span>';return;} wrap.innerHTML=S.contractors.map(function(c){ return'<label class="chip"><input type="checkbox" value="'+c.id+'" '+(sel.indexOf(c.id)>-1?'checked':'')+' style="width:auto;padding:0;border:none;background:none;accent-color:var(--teal);">'+c.name+'</label>'; }).join(''); }
+function clearCF(){ ['cName','cPhone','cEmail','cNote','cEditId'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';}); document.getElementById('cSpec').value='schilder'; document.getElementById('cModalTitle').textContent='Nieuwe Onderaannemer'; }
+function saveContractor(){
+  var name=document.getElementById('cName').value.trim(); if(!name){toast('Naam is verplicht','err');return;}
+  var eid=document.getElementById('cEditId').value;
+  var obj={id:eid||uid(),name:name,spec:document.getElementById('cSpec').value,phone:document.getElementById('cPhone').value.trim(),email:document.getElementById('cEmail').value.trim(),note:document.getElementById('cNote').value.trim()};
+  if(eid){for(var i=0;i<S.contractors.length;i++)if(S.contractors[i].id===eid){S.contractors[i]=obj;break;}toast('Aannemer bijgewerkt');}
+  else{S.contractors.push(obj);toast('Aannemer toegevoegd');}
+  fbSaveCon(obj).catch(function(){toast('Opgeslagen maar sync mislukt','err');});
+  save(); closeModal('cModal'); if(!useFirebase){renderCons();updateBadges();}
+}
+function editCon(id){ var c=gC(id);if(!c)return; document.getElementById('cName').value=c.name; document.getElementById('cSpec').value=c.spec; document.getElementById('cPhone').value=c.phone||''; document.getElementById('cEmail').value=c.email||''; document.getElementById('cNote').value=c.note||''; document.getElementById('cEditId').value=c.id; document.getElementById('cModalTitle').textContent='Aannemer bewerken'; openModal('cModal'); }
+function delCon(id){ if(!confirm('Aannemer verwijderen?'))return; fbDeleteCon(id).catch(function(){}); S.contractors=S.contractors.filter(function(x){return x.id!==id;}); S.projects.forEach(function(p){p.cons=(p.cons||[]).filter(function(x){return x!==id;});}); save(); if(!useFirebase){renderCons();updateBadges();} toast('Aannemer verwijderd'); }
+function renderCons(){
+  var grid=document.getElementById('conGrid'),empty=document.getElementById('conEmpty');
+  if(!S.contractors.length){grid.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  grid.innerHTML=S.contractors.map(function(c){ var pp=S.projects.filter(function(p){return(p.cons||[]).indexOf(c.id)>-1;}); var act=pp.filter(function(p){return['bezig','gepland','wacht'].indexOf(p.status)>-1;}).length,done=pp.filter(function(p){return p.status==='klaar';}).length; return'<div class="ccard" onclick="showConDetail(\''+c.id+'\')">'+'<div class="cchd"><div class="cav">'+ini(c.name)+'</div><div><div class="cnm">'+c.name+'</div><div class="csp">'+spLbl(c.spec)+'</div></div></div>'+'<div class="ccbd"><div class="csts"><div class="cst"><div class="cstv">'+pp.length+'</div><div class="cstl">Projecten</div></div><div class="cst"><div class="cstv" style="color:var(--olive2);">'+act+'</div><div class="cstl">Actief</div></div><div class="cst"><div class="cstv" style="color:var(--green);">'+done+'</div><div class="cstl">Klaar</div></div></div><div style="display:flex;gap:7px;"><button class="btn btn-out btn-sm" onclick="event.stopPropagation();editCon(\''+c.id+'\')">Bewerken</button><button class="btn btn-teal btn-sm" onclick="event.stopPropagation();dlICS(buildICS(S.projects.filter(function(p){return(p.cons||[]).indexOf(\''+c.id+'\')>-1&&p.status!==\'klaar\';})),\'v3worx-'+c.name.replace(/\s/g,'-').toLowerCase()+'.ics\');toast(\'Geexporteerd!\',\'cal\');">Outlook</button><button class="btn btn-del btn-sm" onclick="event.stopPropagation();delCon(\''+c.id+'\')">&#128465;</button></div></div></div>'; }).join('');
+  updateBadges();
+}
+function showConDetail(id){ var c=gC(id);if(!c)return; document.getElementById('con-list').style.display='none'; document.getElementById('con-detail').style.display='block'; var pp=S.projects.filter(function(p){return(p.cons||[]).indexOf(c.id)>-1;}); var up=pp.filter(function(p){return p.status!=='klaar';}); var h='<div style="display:flex;align-items:center;gap:17px;margin-bottom:20px;background:white;padding:17px;border-radius:11px;border:1px solid var(--border);box-shadow:var(--sh);"><div class="cav" style="width:54px;height:54px;font-size:20px;background:var(--dark);">'+ini(c.name)+'</div><div style="flex:1;"><div style="font-family:\'Alumni Sans\',sans-serif;font-size:26px;font-weight:800;color:var(--dark);">'+c.name+'</div><div style="font-size:13px;color:var(--text2);margin-top:2px;">'+spLbl(c.spec)+'</div>'+(c.phone?'<div style="font-size:12px;color:var(--text3);margin-top:3px;">&#128222; '+c.phone+'</div>':'')+(c.email?'<div style="font-size:12px;color:var(--text3);">&#9993; '+c.email+'</div>':'')+'</div><div style="display:flex;gap:8px;"><button class="btn btn-out btn-sm" onclick="editCon(\''+c.id+'\')">Bewerken</button><button class="btn btn-olive btn-sm" onclick="dlICS(buildICS(S.projects.filter(function(p){return(p.cons||[]).indexOf(\''+c.id+'\')>-1&&p.status!==\'klaar\';})),\'v3worx-'+c.name.replace(/\s/g,'-').toLowerCase()+'.ics\');toast(\'Geexporteerd!\',\'cal\');">&#128197; Outlook</button></div></div>'; var tot=pp.length,act=pp.filter(function(p){return p.status==='bezig';}).length,pl=pp.filter(function(p){return['gepland','wacht'].indexOf(p.status)>-1;}).length,done=pp.filter(function(p){return p.status==='klaar';}).length; h+='<div class="srow" style="margin-bottom:17px;"><div class="sc sc-teal"><div class="slbl">Totaal</div><div class="sval">'+tot+'</div></div><div class="sc sc-olive"><div class="slbl">Bezig</div><div class="sval">'+act+'</div></div><div class="sc sc-taupe"><div class="slbl">Gepland</div><div class="sval">'+pl+'</div></div><div class="sc sc-green"><div class="slbl">Klaar</div><div class="sval">'+done+'</div></div></div>'; h+='<div class="card"><div class="ch"><div class="ct">Projecten van '+c.name.split(' ')[0]+'</div></div>'; if(!pp.length){h+='<div class="empty"><div class="empty-ic">&#128203;</div><div class="empty-tx">Geen projecten toegewezen</div></div>';}else{h+='<table><thead><tr><th>Project</th><th>Type</th><th>Start</th><th>Deadline</th><th>Status</th><th>Voortgang</th><th></th></tr></thead><tbody>';pp.sort(function(a,b){return new Date(a.start)-new Date(b.start);}).forEach(function(p){h+='<tr><td><div style="font-weight:600;">'+p.name+'</div>'+(p.client?'<div style="font-size:11px;color:var(--text3);">'+p.client+(p.loc?' &bull; '+p.loc:'')+'</div>':'')+'</td><td>'+tybadge(p.type)+'</td><td style="font-size:12px;">'+fD(p.start)+'</td><td><span class="dd '+ddC(p.end,p.status)+'"></span>'+fD(p.end)+'</td><td>'+sbadge(p.status)+'</td><td style="min-width:110px;">'+progH(p.prog)+'</td><td><button class="btn btn-out btn-xs" onclick="editProject(\''+p.id+'\')">&#9998;</button></td></tr>';});h+='</tbody></table>';}h+='</div>'; if(up.length){h+='<div class="card" style="margin-top:17px;"><div class="ch"><div class="ct">&#128197; Planning &mdash; '+c.name.split(' ')[0]+'</div></div><div class="gscroll"><div id="cg-'+c.id+'" class="ginner"></div></div></div>';} document.getElementById('conDetailBody').innerHTML=h; if(up.length)setTimeout(function(){mG('cg-'+c.id,up);},40); }
+function backToCons(){ document.getElementById('con-list').style.display='block'; document.getElementById('con-detail').style.display='none'; }
+
+/* ══════════════════════════════════════════════
+   PROJECTS
+══════════════════════════════════════════════ */
+function clearPF(){ ['pName','pClient','pLoc','pNote','pEditId'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';}); document.getElementById('pType').value='schilder'; document.getElementById('pStat').value='gepland'; document.getElementById('pStart').value=''; document.getElementById('pEnd').value=''; document.getElementById('pProg').value='0'; document.getElementById('pModalTitle').textContent='Nieuw Project'; }
+function saveProject(){
+  var name=document.getElementById('pName').value.trim(),start=document.getElementById('pStart').value,end=document.getElementById('pEnd').value;
+  if(!name){toast('Naam verplicht','err');return;} if(!start||!end){toast('Datums verplicht','err');return;} if(new Date(end)<new Date(start)){toast('Deadline na startdatum!','err');return;}
+  var cons=[]; document.querySelectorAll('#pConCbs input:checked').forEach(function(cb){cons.push(cb.value);});
+  var eid=document.getElementById('pEditId').value;
+  var obj={id:eid||uid(),name:name,type:document.getElementById('pType').value,status:document.getElementById('pStat').value,start:start,end:end,client:document.getElementById('pClient').value.trim(),loc:document.getElementById('pLoc').value.trim(),cons:cons,prog:parseInt(document.getElementById('pProg').value)||0,note:document.getElementById('pNote').value.trim()};
+  if(eid){for(var i=0;i<S.projects.length;i++)if(S.projects[i].id===eid){S.projects[i]=obj;break;}toast('Project bijgewerkt');}
+  else{S.projects.push(obj);toast('Project toegevoegd');}
+  fbSaveProject(obj).catch(function(){toast('Opgeslagen maar sync mislukt','err');});
+  save(); closeModal('pModal'); if(!useFirebase){renderProjects();renderDash();updateBadges();}
+}
+function editProject(id){ var p=null; for(var i=0;i<S.projects.length;i++) if(S.projects[i].id===id){p=S.projects[i];break;} if(!p)return; document.getElementById('pName').value=p.name; document.getElementById('pType').value=p.type; document.getElementById('pStat').value=p.status; document.getElementById('pStart').value=p.start; document.getElementById('pEnd').value=p.end; document.getElementById('pClient').value=p.client||''; document.getElementById('pLoc').value=p.loc||''; document.getElementById('pProg').value=p.prog||0; document.getElementById('pNote').value=p.note||''; document.getElementById('pEditId').value=p.id; document.getElementById('pModalTitle').textContent='Project bewerken'; openModal('pModal'); setTimeout(function(){document.querySelectorAll('#pConCbs input').forEach(function(cb){cb.checked=(p.cons||[]).indexOf(cb.value)>-1;});},80); }
+function delProject(id){ if(!confirm('Project verwijderen?'))return; fbDeleteProject(id).catch(function(){}); S.projects=S.projects.filter(function(x){return x.id!==id;}); save(); if(!useFirebase){renderProjects();renderDash();updateBadges();} toast('Project verwijderd'); }
+function renderProjects(){ var srch=(document.getElementById('srch')?document.getElementById('srch').value:'').toLowerCase(),fSt=document.getElementById('fSt')?document.getElementById('fSt').value:'',fTy=document.getElementById('fTy')?document.getElementById('fTy').value:''; var pp=S.projects.filter(function(p){if(srch&&p.name.toLowerCase().indexOf(srch)<0&&(p.client||'').toLowerCase().indexOf(srch)<0)return false;if(fSt&&p.status!==fSt)return false;if(fTy&&p.type!==fTy)return false;return true;}).sort(function(a,b){return new Date(a.end)-new Date(b.end);}); var tb=document.getElementById('pTbody'),em=document.getElementById('pEmpty'); if(!pp.length){tb.innerHTML='';em.style.display='block';return;}em.style.display='none'; tb.innerHTML=pp.map(function(p){var d=dL(p.end);return'<tr><td><div style="font-weight:600;">'+p.name+'</div>'+(p.client?'<div style="font-size:11px;color:var(--text3);">'+p.client+(p.loc?' &bull; '+p.loc:'')+'</div>':'')+'</td><td>'+tybadge(p.type)+'</td><td style="font-size:12px;color:var(--text2);">'+fD(p.start)+'</td><td><span class="dd '+ddC(p.end,p.status)+'"></span><span style="font-size:12px;">'+fD(p.end)+'</span>'+(p.status!=='klaar'?'<div style="font-size:10px;color:'+(d<0?'var(--red)':d<=7?'var(--amber)':'var(--text3)')+';">'+(d<0?Math.abs(d)+'d te laat':d+'d resterend')+'</div>':'')+'</td><td>'+cNms(p.cons)+'</td><td>'+sbadge(p.status)+'</td><td style="min-width:110px;">'+progH(p.prog)+'</td><td><div style="display:flex;gap:5px;"><button class="btn btn-out btn-xs" onclick="editProject(\''+p.id+'\')">&#9998;</button><button class="btn btn-del btn-xs" onclick="delProject(\''+p.id+'\')">&#128465;</button></div></td></tr>';}).join(''); updateBadges(); }
+
+/* ══════════════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════════════ */
+function renderDash(){ var tot=S.projects.length,act=S.projects.filter(function(p){return p.status==='bezig';}).length,late=S.projects.filter(function(p){return p.status==='vertraagd'||(p.status!=='klaar'&&dL(p.end)<0);}).length,done=S.projects.filter(function(p){return p.status==='klaar';}).length; document.getElementById('statsRow').innerHTML='<div class="sc sc-teal"><div class="slbl">Totaal</div><div class="sval">'+tot+'</div><div class="ssub">projecten</div></div><div class="sc sc-olive"><div class="slbl">Actief</div><div class="sval" style="color:var(--olive2);">'+act+'</div><div class="ssub">bezig</div></div><div class="sc sc-red"><div class="slbl">Vertraagd</div><div class="sval" style="color:var(--red);">'+late+'</div><div class="ssub">te laat</div></div><div class="sc sc-green"><div class="slbl">Klaar</div><div class="sval" style="color:var(--green);">'+done+'</div><div class="ssub">afgerond</div></div>'; var actP=S.projects.filter(function(p){return['bezig','gepland'].indexOf(p.status)>-1;}).sort(function(a,b){return new Date(a.end)-new Date(b.end);}).slice(0,6); document.getElementById('dash-active').innerHTML=!actP.length?'<div class="empty"><div class="empty-ic">&#9989;</div><div class="empty-tx">Geen actieve projecten</div></div>':actP.map(function(p){return'<div style="padding:10px 15px;border-bottom:1px solid rgba(2,32,35,.04);cursor:pointer;" onclick="editProject(\''+p.id+'\')"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;"><span style="font-weight:600;font-size:13px;flex:1;">'+p.name+'</span>'+sbadge(p.status)+'</div>'+progH(p.prog)+'<div style="font-size:11px;color:var(--text3);margin-top:2px;">'+fD(p.end)+' &bull; '+cNms(p.cons)+'</div></div>';}).join(''); var soon=S.projects.filter(function(p){return p.status!=='klaar'&&dL(p.end)<=14;}).sort(function(a,b){return new Date(a.end)-new Date(b.end);}); document.getElementById('dash-dead').innerHTML=!soon.length?'<div class="empty"><div class="empty-ic">&#128197;</div><div class="empty-tx">Geen deadlines komende 2 weken</div></div>':soon.map(function(p){var d=dL(p.end);var c=d<0?'var(--red)':d<=3?'var(--red)':'var(--amber)';return'<div style="padding:10px 15px;border-bottom:1px solid rgba(2,32,35,.04);display:flex;align-items:center;gap:12px;"><div style="text-align:center;min-width:44px;"><div style="font-family:\'Alumni Sans\',sans-serif;font-size:25px;font-weight:800;color:'+c+';line-height:1;">'+Math.abs(d)+'</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;">'+(d<0?'te laat':'dagen')+'</div></div><div style="flex:1;"><div style="font-weight:600;font-size:13px;">'+p.name+'</div><div style="font-size:11px;color:var(--text3);">'+fD(p.end)+'</div></div>'+sbadge(p.status)+'</div>';}).join(''); var wl=document.getElementById('dash-load'); if(!S.contractors.length){wl.innerHTML='<div class="empty"><div class="empty-ic">&#128119;</div><div class="empty-tx">Geen aannemers</div></div>';return;} wl.innerHTML=S.contractors.map(function(c){var n=S.projects.filter(function(p){return(p.cons||[]).indexOf(c.id)>-1&&p.status!=='klaar';}).length;var pct=Math.min(100,n*20);var col=pct>=80?'var(--red)':pct>=40?'var(--olive)':'var(--teal)';return'<div style="display:flex;align-items:center;gap:13px;margin-bottom:12px;"><div class="cav" style="width:33px;height:33px;font-size:13px;">'+ini(c.name)+'</div><div style="flex:1;"><div style="font-size:13px;font-weight:600;margin-bottom:3px;">'+c.name+' <span style="color:var(--text3);font-weight:400;font-size:11px;">'+spLbl(c.spec)+'</span></div><div class="pw"><div class="pb" style="width:'+pct+'%;background:'+col+';"></div></div></div><div style="min-width:38px;text-align:right;"><div style="font-family:\'Alumni Sans\',sans-serif;font-size:20px;font-weight:800;color:'+col+';line-height:1;">'+n+'</div><div style="font-size:9px;color:var(--text3);">actief</div></div></div>';}).join(''); }
+
+/* ══════════════════════════════════════════════
+   GANTT
+══════════════════════════════════════════════ */
+var ganttOff=0;
+var MN=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+var BC={bezig:'var(--olive)',gepland:'var(--teal)',klaar:'var(--green)',vertraagd:'var(--red)',wacht:'var(--taupe)'};
+function ganttShift(d){ganttOff+=d;renderG();}
+function renderG(){ var t=new Date(),s=new Date(t.getFullYear(),t.getMonth()+ganttOff,1),e=new Date(s.getFullYear(),s.getMonth()+3,0); gInto('ganttBox',S.projects,s,e); document.getElementById('ganttLbl').textContent=MN[s.getMonth()]+' — '+MN[e.getMonth()]+' '+e.getFullYear(); }
+function mG(id,pp){ if(!pp.length)return; var ds=[];pp.forEach(function(p){ds.push(new Date(p.start));ds.push(new Date(p.end));}); var mn=new Date(Math.min.apply(null,ds)),mx=new Date(Math.max.apply(null,ds)); gInto(id,pp,new Date(mn.getFullYear(),mn.getMonth(),1),new Date(mx.getFullYear(),mx.getMonth()+1,0)); }
+function gInto(id,pp,s,e){ var el=document.getElementById(id);if(!el)return; var t=new Date(),sp=e-s;if(sp<=0)return; function pct(d){return Math.max(0,Math.min(100,(new Date(d)-s)/sp*100));} var ticks='',mh=''; var d=new Date(s.getFullYear(),s.getMonth(),1); while(d<=e){var p=pct(d);ticks+='<div class="gtick" style="left:'+p+'%;"></div>';mh+='<div class="gmlbl" style="position:absolute;left:'+p+'%;">'+MN[d.getMonth()]+' '+d.getFullYear()+'</div>';d=new Date(d.getFullYear(),d.getMonth()+1,1);} var tp=pct(t); var hdr='<div style="display:flex;border-bottom:1px solid var(--border);background:#f6f8f6;"><div style="min-width:210px;padding:8px 13px;font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.6px;border-right:1px solid var(--border);">Project</div><div style="flex:1;position:relative;height:27px;">'+mh+'</div></div>'; var rows=pp.slice().sort(function(a,b){return new Date(a.start)-new Date(b.start);}).map(function(p){var l=pct(p.start),r=pct(p.end),w=Math.max(.5,r-l);var col=BC[p.status]||'var(--teal)';var lbl=p.name.length>26?p.name.substring(0,26)+'…':p.name;return'<div class="grow" style="grid-template-columns:210px 1fr;"><div class="glbl">'+lbl+'<small>'+fD(p.start)+' &rarr; '+fD(p.end)+'</small></div><div class="gtl">'+ticks+(tp>=0&&tp<=100?'<div class="gtoday" style="left:'+tp+'%;"></div>':'')+'<div class="gbar" style="left:'+l+'%;width:'+w+'%;background:'+col+';" onclick="editProject(\''+p.id+'\')" title="'+p.name+'">'+(w>8?lbl:'')+'</div></div></div>';}); el.innerHTML=hdr+rows.join(''); }
+
+/* ══════════════════════════════════════════════
+   BADGES & BACKUP
+══════════════════════════════════════════════ */
+function updateBadges(){ document.getElementById('nb-p').textContent=S.projects.length; document.getElementById('nb-c').textContent=S.contractors.length; }
+function exportBackup(){ var data=JSON.stringify(S,null,2); var blob=new Blob([data],{type:'application/json'}); var url=URL.createObjectURL(blob); var a=document.createElement('a');a.href=url;a.download='v3worx-backup-'+new Date().toISOString().split('T')[0]+'.json';a.click();URL.revokeObjectURL(url); toast('Back-up gedownload','ok'); }
+function renderAll(){ renderDash(); renderProjects(); renderCons(); updateBadges(); }
+
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
+/* ══ WACHTWOORD ══ */
+// Wijzig hier het wachtwoord:
+var APP_PASSWORD = 'v3worx2024';
+
+function checkPw() {
+  var val = document.getElementById('pwInput').value;
+  var err = document.getElementById('pwErr');
+  if (val === APP_PASSWORD) {
+    // Onthoud login voor 8 uur
+    localStorage.setItem('pw_ok', Date.now() + 8*60*60*1000);
+    document.getElementById('pwScreen').style.display = 'none';
+    autoConnect();
+  } else {
+    err.textContent = 'Verkeerde code — probeer opnieuw';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+    // Schud animatie
+    var inp = document.getElementById('pwInput');
+    inp.style.borderColor = 'var(--red)';
+    setTimeout(function(){ inp.style.borderColor = 'rgba(255,255,255,.12)'; }, 1000);
+  }
+}
+
+function initApp() {
+  // Controleer of wachtwoord al ingevoerd was (geldig voor 8 uur)
+  var stored = localStorage.getItem('pw_ok');
+  if (stored && parseInt(stored) > Date.now()) {
+    document.getElementById('pwScreen').style.display = 'none';
+    autoConnect();
+  } else {
+    // Toon wachtwoordscherm en focus input
+    document.getElementById('pwScreen').style.display = 'flex';
+    setTimeout(function(){ document.getElementById('pwInput').focus(); }, 300);
+  }
+}
+
+initApp();
+</script>
+</body>
+</html>
