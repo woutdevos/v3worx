@@ -7,6 +7,13 @@
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<meta name="theme-color" content="#022023">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="V3-Worx">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23022023'/><text y='55' x='50' font-size='42' text-anchor='middle' fill='%23BEBF07' font-family='Arial Black' font-weight='900'>V3</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Alumni+Sans:wght@300;400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -242,6 +249,109 @@ textarea{resize:vertical;min-height:70px;}
 
 ::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 @media(max-width:900px){.srow{grid-template-columns:1fr 1fr;}.sidebar{width:54px;}.nv span:not(.ni),.ngl,.sf{display:none;}.nv{justify-content:center;}.nbadge{display:none;}}
+
+/* ══ MOBILE RESPONSIVE ══ */
+@media (max-width: 768px) {
+  header { height: 56px; padding: 0 14px; }
+  .logo-name { font-size: 18px; }
+  .logo-tag { display: none; }
+  .lsep { display: none; }
+  .hdr-r { gap: 6px; }
+  .hdr-r .btn-gd { display: none; }
+
+  /* Sidebar wordt bottom nav op mobiel */
+  .sidebar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    width: 100% !important;
+    height: 60px;
+    flex-direction: row;
+    border-right: none;
+    border-top: 1px solid rgba(255,255,255,.08);
+    z-index: 150;
+  }
+  .ng { display: flex; flex-direction: row; padding: 0; flex: 1; }
+  .ngl { display: none; }
+  .nv {
+    flex: 1;
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px 4px;
+    border-radius: 0;
+    font-size: 9px;
+    margin-bottom: 0;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .nv span:not(.ni) { display: block !important; font-size: 9px; line-height: 1.2; }
+  .nv .ni { font-size: 18px; width: auto; }
+  .nbadge { display: flex !important; position: absolute; top: 6px; right: 20%; font-size: 8px; padding: 1px 4px; }
+  .nv { position: relative; }
+  .sf { display: none; }
+
+  /* Main content heeft ruimte voor bottom nav */
+  .layout { height: calc(100vh - 56px); }
+  .main { padding: 14px 14px 74px 14px; }
+
+  /* Stat cards 2 kolommen */
+  .srow { grid-template-columns: 1fr 1fr !important; gap: 10px; }
+  .sval { font-size: 32px; }
+
+  /* Dashboard grid 1 kolom */
+  #pg-dash > div[style*="grid-template-columns:1fr 1fr"] {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Tabellen scrollen horizontaal */
+  .card { overflow-x: auto; }
+  table { min-width: 600px; }
+
+  /* Page header */
+  .ph { flex-direction: column; gap: 10px; }
+  .ph > div:last-child { display: flex; gap: 8px; width: 100%; }
+  .ph > div:last-child .btn { flex: 1; justify-content: center; }
+  .ph-t { font-size: 24px; }
+
+  /* Filter bar */
+  .frow { flex-direction: column; }
+  .frow input, .frow select { width: 100%; }
+
+  /* Gantt */
+  .ob { flex-direction: column; gap: 10px; }
+  .ob-btns { display: flex; gap: 8px; width: 100%; }
+  .ob-btns .btn { flex: 1; justify-content: center; }
+
+  /* Contractor cards */
+  .cgrid { grid-template-columns: 1fr !important; }
+
+  /* Modal */
+  .modal { width: 100% !important; max-width: 100%; margin: 0; border-radius: 16px 16px 0 0; position: fixed; bottom: 0; max-height: 92vh; }
+  .overlay { align-items: flex-end; }
+  .fg2 { grid-template-columns: 1fr !important; }
+  .fg.w2 { grid-column: 1 !important; }
+
+  /* Outlook banner */
+  .ob { padding: 10px 12px; }
+  .ob-t small { display: none; }
+
+  /* Sync bar */
+  #syncBar { padding: 5px 14px; font-size: 11px; }
+
+  /* Back button */
+  .back-btn { margin-bottom: 12px; }
+
+  /* Contractor detail stats */
+  .srow[style*="margin-bottom:17px"] { grid-template-columns: repeat(4,1fr) !important; }
+}
+
+@media (max-width: 400px) {
+  .srow { grid-template-columns: 1fr 1fr !important; }
+  .srow[style*="margin-bottom:17px"] { grid-template-columns: 1fr 1fr !important; }
+  .ph-t { font-size: 21px; }
+}
+
 </style>
 </head>
 <body>
@@ -267,59 +377,6 @@ textarea{resize:vertical;min-height:70px;}
   </div>
 </div>
 
-<!-- ══ SETUP SCREEN ══ -->
-<div id="setupScreen">
-  <div class="ss-wrap">
-    <div class="ss-logo">
-      <div class="ss-lm">V3</div>
-      <div class="ss-ln">WORX</div>
-    </div>
-    <div class="ss-card">
-      <div class="ss-title">&#128293; Firebase instellen</div>
-      <div class="ss-sub">Eenmalige setup van 10 minuten — daarna werkt alles automatisch voor iedereen.</div>
-
-      <div class="ss-step">
-        <div class="ss-num">1</div>
-        <div class="ss-step-txt">Ga naar <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> en log in met een Google account.</div>
-      </div>
-      <div class="ss-step">
-        <div class="ss-num">2</div>
-        <div class="ss-step-txt">Klik op <strong style="color:white">"Project toevoegen"</strong> → naam: <code>v3worx</code> → Google Analytics: uitschakelen → <strong style="color:white">"Project maken"</strong>.</div>
-      </div>
-      <div class="ss-step">
-        <div class="ss-num">3</div>
-        <div class="ss-step-txt">Klik op het <strong style="color:white">web-icoon (&lt;/&gt;)</strong> → app naam: <code>v3worx</code> → registreer. Kopieer daarna de <strong style="color:white">firebaseConfig</strong> gegevens.</div>
-      </div>
-      <div class="ss-step">
-        <div class="ss-num">4</div>
-        <div class="ss-step-txt">Ga naar <strong style="color:white">Firestore Database</strong> (linkermenu) → <strong style="color:white">"Database maken"</strong> → kies <strong style="color:white">"Testmodus"</strong> → regio: <code>europe-west1</code>.</div>
-      </div>
-
-      <div class="ss-divider"></div>
-
-      <div class="ss-fg">
-        <label>API Key</label>
-        <input id="cfg-apiKey" type="text" placeholder="AIzaSy...">
-      </div>
-      <div class="ss-fg">
-        <label>Auth Domain</label>
-        <input id="cfg-authDomain" type="text" placeholder="v3worx.firebaseapp.com">
-      </div>
-      <div class="ss-fg">
-        <label>Project ID</label>
-        <input id="cfg-projectId" type="text" placeholder="v3worx">
-      </div>
-
-      <div id="setupErr" class="ss-err"></div>
-
-      <div class="ss-btns">
-        <button class="ss-btn-main" onclick="connectFirebase()">&#128293; Verbinden met Firebase</button>
-        <button class="ss-btn-demo" onclick="startDemo()">Demo zonder Firebase</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- ══ LOADING ══ -->
 <div id="loadingOverlay">
   <div class="spinner"></div>
@@ -331,7 +388,7 @@ textarea{resize:vertical;min-height:70px;}
   <div class="sdot" id="sDot"></div>
   <div class="sbar-txt" id="sTxt"></div>
   <div class="sbar-right">
-    <span class="sbar-link" onclick="showSetup()">&#9881; Firebase wijzigen</span>
+    <span class="sbar-link" onclick="exportBackup()">&#9881; Instellingen</span>
     <span class="sbar-link" onclick="exportBackup()">&#128229; Back-up</span>
   </div>
 </div>
@@ -833,23 +890,22 @@ function renderAll(){ renderDash(); renderProjects(); renderCons(); updateBadges
 /* ══════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════ */
-/* ══ WACHTWOORD ══ */
-// Wijzig hier het wachtwoord:
+/* ══════════════════════════════════════════════
+   WACHTWOORD
+══════════════════════════════════════════════ */
 var APP_PASSWORD = 'v3worx2024';
 
 function checkPw() {
   var val = document.getElementById('pwInput').value;
   var err = document.getElementById('pwErr');
   if (val === APP_PASSWORD) {
-    // Onthoud login voor 8 uur
     localStorage.setItem('pw_ok', Date.now() + 8*60*60*1000);
     document.getElementById('pwScreen').style.display = 'none';
-    autoConnect();
+    startFirebase();
   } else {
     err.textContent = 'Verkeerde code — probeer opnieuw';
     document.getElementById('pwInput').value = '';
     document.getElementById('pwInput').focus();
-    // Schud animatie
     var inp = document.getElementById('pwInput');
     inp.style.borderColor = 'var(--red)';
     setTimeout(function(){ inp.style.borderColor = 'rgba(255,255,255,.12)'; }, 1000);
@@ -857,19 +913,73 @@ function checkPw() {
 }
 
 function initApp() {
-  // Controleer of wachtwoord al ingevoerd was (geldig voor 8 uur)
   var stored = localStorage.getItem('pw_ok');
   if (stored && parseInt(stored) > Date.now()) {
     document.getElementById('pwScreen').style.display = 'none';
-    autoConnect();
+    startFirebase();
   } else {
-    // Toon wachtwoordscherm en focus input
     document.getElementById('pwScreen').style.display = 'flex';
     setTimeout(function(){ document.getElementById('pwInput').focus(); }, 300);
   }
 }
 
+/* ══════════════════════════════════════════════
+   FIREBASE — VAST INGEBOUWD
+══════════════════════════════════════════════ */
+function startFirebase() {
+  try {
+    if (!firebase.apps.length) {
+      firebase.initializeApp({
+        apiKey:    "AIzaSyA3xbArecEOkwvCH1zzh3Lvg9B3-5P6JMM",
+        authDomain:"v3worx.firebaseapp.com",
+        projectId: "v3worx"
+      });
+    }
+    db = firebase.firestore();
+    useFirebase = true;
+    setSyncStatus('load', 'Verbinden...');
+    startRealtimeListeners();
+  } catch(e) {
+    setSyncStatus('err', 'Firebase fout: ' + e.message);
+    load(); seedDemo(); renderAll();
+  }
+}
+
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
 initApp();
 </script>
+
+<script>
+// PWA Service Worker registratie
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').catch(function(e) {
+      console.log('SW niet beschikbaar (normaal op lokaal):', e);
+    });
+  });
+}
+
+// iOS PWA installatie hint
+var isIOS = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+var isInStandaloneMode = ('standalone' in window.navigator) && window.navigator.standalone;
+if (isIOS && !isInStandaloneMode && !localStorage.getItem('ios_hint_shown')) {
+  setTimeout(function() {
+    var hint = document.createElement('div');
+    hint.innerHTML = '<div style="position:fixed;bottom:70px;left:14px;right:14px;background:var(--dark);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:14px 16px;z-index:9998;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,.4);">' +
+      '<div style="font-size:28px;">&#128247;</div>' +
+      '<div style="flex:1;">' +
+        '<div style="font-size:13px;font-weight:600;color:white;">Installeer als app</div>' +
+        '<div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:2px;">Tik op het deel-icoon &#11014; en kies "Zet op beginscherm"</div>' +
+      '</div>' +
+      '<div onclick="this.parentElement.parentElement.remove();localStorage.setItem('ios_hint_shown','1');" style="color:rgba(255,255,255,.4);cursor:pointer;font-size:18px;padding:4px;">&#10005;</div>' +
+    '</div>';
+    document.body.appendChild(hint);
+    setTimeout(function(){ if(hint.parentNode) hint.remove(); }, 8000);
+  }, 3000);
+}
+</script>
+
 </body>
 </html>

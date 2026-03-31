@@ -1,0 +1,20 @@
+{
+  "name": "V3-Worx Planning",
+  "short_name": "V3-Worx",
+  "description": "Planning app voor V3-Worx — projecten, aannemers en deadlines",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#022023",
+  "theme_color": "#022023",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%23022023'/><text y='300' x='256' font-size='220' text-anchor='middle' fill='%23BEBF07' font-family='Arial Black' font-weight='900'>V3</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "nl"
+}
